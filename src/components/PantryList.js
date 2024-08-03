@@ -12,8 +12,8 @@ const PantryList = () => {
   useEffect(() => {
     const fetchItems = () => {
       let q;
+      const lowerCaseQuery = searchQuery.toLowerCase();
       if (searchQuery) {
-        const lowerCaseQuery = searchQuery.toLowerCase();
         q = query(
           collection(db, 'pantry'),
           where('nameLowercase', '>=', lowerCaseQuery),
@@ -25,29 +25,34 @@ const PantryList = () => {
           orderBy('name')
         );
       }
-      
+  
       const unsubscribe = onSnapshot(q, (querySnapshot) => {
-        setItems(querySnapshot.docs.map(doc => ({ ...doc.data(), id: doc.id })));
+        const itemsData = querySnapshot.docs.map(doc => ({ ...doc.data(), id: doc.id }));
+        console.log('Fetched items:', itemsData);
+        setItems(itemsData);
       }, (error) => {
-        console.error('Error fetching items: ', error);
+        console.error('Error fetching items:', error);
       });
-
-      // Cleanup subscription on unmount
+  
       return () => unsubscribe();
     };
-
+  
     fetchItems();
   }, [searchQuery]);
+  
 
   const deleteItem = async (id) => {
     try {
       await deleteDoc(doc(db, 'pantry', id));
       console.log('Item deleted successfully');
+      // Update the local state to remove the deleted item
+      setItems(items.filter(item => item.id !== id));
     } catch (error) {
-      console.error('Error deleting item: ', error);
+      console.error('Error deleting item:', error);
     }
   };
-
+  
+  
   const incrementQuantity = async (id) => {
     try {
       const itemRef = doc(db, 'pantry', id);

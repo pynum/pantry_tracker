@@ -1,9 +1,24 @@
 'use client'; // Ensure this is at the top if using client-side hooks
 
 import { useState } from 'react';
-import { db, collection, addDoc } from '../firebase';
+import { addDoc, collection } from 'firebase/firestore';
+import { db } from '../firebase'; // Import your firebase configuration
 import TextField from '@mui/material/TextField';
 import Button from '@mui/material/Button';
+import { styled } from '@mui/material/styles';
+
+// Define custom styles using `styled`
+const FormControl = styled(TextField)(({ theme }) => ({
+  marginBottom: '20px',
+  width: '100%',
+  '& .MuiInputLabel-root': {
+    backgroundColor: 'white',
+    padding: '0 5px',
+  },
+  '& .MuiInputBase-root': {
+    padding: '10px',
+  },
+}));
 
 const PantryForm = () => {
   const [item, setItem] = useState({ name: '', quantity: '' });
@@ -16,45 +31,45 @@ const PantryForm = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError(''); // Reset error message
+
     if (!item.name || !item.quantity || isNaN(item.quantity)) {
       setError('Please enter a valid item name and quantity.');
       return;
     }
 
-    console.log('Submitting item:', item);
     try {
-      // item.name = item.name.toLowerCase();
-      await addDoc(collection(db, 'pantry'), {
+      const docRef = await addDoc(collection(db, 'pantry'), {
         ...item,
-        quantity: parseInt(item.quantity, 10) // Ensure quantity is an integer
+        nameLowercase: item.name.toLowerCase(),
+        quantity: parseInt(item.quantity, 10)
       });
-      console.log('Item added successfully');
+      console.log('Item added successfully:', docRef.id);
       setItem({ name: '', quantity: '' });
-    } catch (error) {
-      console.error('Error adding document:', error);
+    } catch (err) {
+      console.error('Error adding document:', err);
       setError('Error adding item. Please try again.');
     }
   };
 
   return (
     <form onSubmit={handleSubmit}>
-      <TextField
+      <FormControl
         label="Item Name"
         name="name"
         value={item.name}
         onChange={handleChange}
         required
       />
-      <TextField
+      <FormControl
         label="Quantity"
         name="quantity"
-        type="number" // Ensure only numbers are input
+        type="number"
         value={item.quantity}
         onChange={handleChange}
         required
       />
       <Button type="submit" variant="contained">Add Item</Button>
-      {error && <p style={{ color: 'red' }}>{error}</p>} {/* Display error message */}
+      {error && <p style={{ color: 'red' }}>{error}</p>}
     </form>
   );
 };
